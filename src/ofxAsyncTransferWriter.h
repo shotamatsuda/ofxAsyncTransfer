@@ -26,12 +26,7 @@
 
 #pragma once
 
-#include <cstddef>
-#include <utility>
-
 #include "ofConstants.h"
-#include "ofGLUtils.h"
-#include "ofPixels.h"
 #include "ofTexture.h"
 #include "ofxAsyncTransferFrames.h"
 #include "ofxAsyncTransferPixels.h"
@@ -41,7 +36,8 @@ namespace ofxasynctransfer {
 
 class Writer final {
  public:
-  explicit Writer(int frames = 2);
+  explicit Writer(int frames = 3);
+  void setup(int frames);
 
   // Disallow copy semantics
   Writer(const Writer&) = delete;
@@ -51,24 +47,29 @@ class Writer final {
   Writer(Writer&&) = default;
   Writer& operator=(Writer&&) = default;
 
-  // Modifiers
+  // Binds the contents of a texture to CPU memory addresses via a pixel buffer
+  // for writing. The unbind() must be called after finishing with the data to
+  // release the buffer. The format of the resulting pixels is automatically
+  // chosen from the internal format of the target when the image type is
+  // undefined or pixel format is unknown.
   template <class T>
-  Pixels<T> bind(ofTexture& texture);
+  Pixels_<T> bind(ofTexture& texture,
+                  ofImageType imageType = OF_IMAGE_UNDEFINED);
   template <class T>
-  Pixels<T> bind(ofTexture& texture, ofImageType imageType);
+  Pixels_<T> bind(ofTexture& texture, ofPixelFormat pixelFormat);
   template <class T>
-  Pixels<T> bind(ofTexture& texture, ofPixelFormat pixelFormat);
-  template <class T>
-  Pixels<T> bind(ofTexture& texture, GLenum internalFormat);
-  template <class T>
-  Pixels<T> bind(ofTexture& texture, GLenum internalFormat, GLenum format);
-  template <class T>
-  ofPixels_<T> bindAsPixels(ofTexture& texture, ofImageType imageType);
-  template <class T>
-  ofPixels_<T> bindAsPixels(ofTexture& texture, ofPixelFormat pixelFormat);
+  Pixels_<T> bind(ofTexture& texture, GLenum format);
+
+  // Unbinds the contents of the target bound by bind() from a pixel buffer.
+  // This must be called after finishing with the data to release the buffer.
   void unbind();
 
-  // Controls the number of frames to use for asynchronous writing.
+  // Controls the number of frames to use for asynchronous writing. In contrast
+  // to reading, setting this to 1 does not necessarily mean synchronous
+  // transfer, because every time bind() is called, the contents of pixel
+  // buffer is discarded while it is being uploaded. An optimal size depends on
+  // use cases and the frequency of lookups, but the range between 1-3 should
+  // be enough with respect to latency and memory consumption.
   int getFrameSize() const;
   void setFrameSize(int value);
 
@@ -76,13 +77,11 @@ class Writer final {
   struct Data {
     int width;
     int height;
-    GLenum internalFormat;
     GLenum format;
-    Data() : width(), height(), internalFormat(), format() {}
-    Data(int width, int height, GLenum internalFormat, GLenum format)
+    Data() : width(), height(), format() {}
+    Data(int width, int height, GLenum format)
         : width(width),
           height(height),
-          internalFormat(internalFormat),
           format(format) {}
   };
 
@@ -92,48 +91,8 @@ class Writer final {
 };
 
 template <class T>
-inline Pixels<T> Writer::bind(ofTexture& texture) {
-  // The texture must be allocated because we do not know what kind of internal
-  // format is desired for it.
-  if (!texture.isAllocated()) {
-    return Pixels<T>();
-  }
-  return bind<T>(texture, texture.getTextureData().glInternalFormat);
-}
-
-template <class T>
-inline Pixels<T> Writer::bind(ofTexture& texture, ofImageType imageType) {
+inline Pixels_<T> Writer::bind(ofTexture& texture, ofImageType imageType) {
   return bind<T>(texture, getPixelFormatFromImageType(imageType));
-}
-
-template <class T>
-inline Pixels<T> Writer::bind(ofTexture& texture, ofPixelFormat pixelFormat) {
-  const auto internalFormat = ofGetGLInternalFormatFromPixelFormat(pixelFormat);
-  const auto format = ofGetGLFormatFromPixelFormat(pixelFormat);
-  return bind<T>(texture, internalFormat, format);
-}
-
-template <class T>
-inline Pixels<T> Writer::bind(ofTexture& texture, GLenum internalFormat) {
-  const auto format = ofGetGLFormatFromInternal(internalFormat);
-  return bind<T>(texture, internalFormat, format);
-}
-
-template <class T>
-inline ofPixels_<T> bindAsPixels(ofTexture& texture, ofImageType imageType) {
-  return bindAsPixels<T>(texture, getPixelFormatFromImageType(imageType));
-}
-
-template <class T>
-inline ofPixels_<T> bindAsPixels(ofTexture& texture,
-                                 ofPixelFormat pixelFormat) {
-  const auto result = bind<T>(texture, pixelFormat);
-  ofPixels_<T> pixels;
-  pixels.setFromExternalPixels(result.getData(),
-                               result.getWidth(),
-                               result.getHeight(),
-                               pixelFormat);
-  return std::move(pixels);
 }
 
 }  // namespace ofxasynctransfer

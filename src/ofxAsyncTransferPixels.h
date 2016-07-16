@@ -26,23 +26,39 @@
 
 #pragma once
 
-#include <cstddef>
+#include <type_traits>
 
 #include "ofConstants.h"
 #include "ofGLUtils.h"
+#include "ofPixels.h"
 #include "ofxAsyncTransferUtils.h"
 
 namespace ofxasynctransfer {
 
+// A lightweight intermediate class representing a matrix of pixels. Converting
+// this into an ofPixels does not copy its contents, and it should finish
+// instantly. Because ofPixels does not accept const types in its template
+// argument, the converted type will be const if the template argument is a
+// const type in order to avoid the violation of constness.
+
 template <class T>
-class Pixels final {
+class Pixels_ final {
  public:
-  Pixels();
-  Pixels(T * data, int width, int height, GLenum format);
+  using NonConstPixel = typename std::remove_const<T>::type;
+  using NonConstPixels = ofPixels_<NonConstPixel>;
+  using Pixels = typename std::conditional<
+    std::is_const<T>::value,
+    typename std::add_const<NonConstPixels>::type,
+    ofPixels_<T>
+  >::type;
+
+ public:
+  Pixels_();
+  Pixels_(T * data, int width, int height, GLenum format);
 
   // Copy semantics
-  Pixels(const Pixels&) = default;
-  Pixels& operator=(const Pixels&) = default;
+  Pixels_(const Pixels_&) = default;
+  Pixels_& operator=(const Pixels_&) = default;
 
   // Data
   T * getData() const { return data; }
@@ -55,29 +71,53 @@ class Pixels final {
   GLenum getType() const { return GLType<T>::value; }
 
   // Iterator
-  T * begin() const { return data; }
-  T * end() const { return data + size; }
+  T * begin() const;
+  T * end() const;
+
+  // Pixels
+  Pixels& getPixels() const;
+  operator Pixels&() const { return getPixels(); }
 
  private:
   T * data;
   int width;
   int height;
   GLenum format;
-  std::size_t size;
+  mutable NonConstPixels pixels;
 };
 
 template <class T>
-inline Pixels<T>::Pixels() : data(), width(), height(), format(), size() {}
+inline Pixels_<T>::Pixels_() : data(), width(), height(), format() {}
 
 template <class T>
-inline Pixels<T>::Pixels(T * data, int width, int height, GLenum format)
+inline Pixels_<T>::Pixels_(T * data, int width, int height, GLenum format)
     : data(data),
       width(width),
       height(height),
-      format(format),
-      size(width * height * ofGetNumChannelsFromGLFormat(format)) {}
+      format(format) {}
+
+template <class T>
+inline T * Pixels_<T>::begin() const {
+  return data;
+}
+
+template <class T>
+inline T * Pixels_<T>::end() const {
+  return data + width * height * ofGetNumChannelsFromGLFormat(format);
+}
+
+template <class T>
+typename Pixels_<T>::Pixels& Pixels_<T>::getPixels() const {
+  if (!pixels.isAllocated()) {
+    pixels.setFromExternalPixels(const_cast<NonConstPixel *>(data),
+                                 width,
+                                 height,
+                                 ofGetNumChannelsFromGLFormat(format));
+  }
+  return pixels;
+}
 
 }  // namespace ofxasynctransfer
 
 template <class T>
-using ofxAsyncTransferPixels = ofxasynctransfer::Pixels<T>;
+using ofxAsyncTransferPixels = ofxasynctransfer::Pixels_<T>;

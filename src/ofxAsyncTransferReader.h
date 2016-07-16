@@ -26,10 +26,7 @@
 
 #pragma once
 
-#include <cstddef>
-
 #include "ofConstants.h"
-#include "ofGLUtils.h"
 #include "ofFbo.h"
 #include "ofTexture.h"
 #include "ofxAsyncTransferFrames.h"
@@ -40,7 +37,8 @@ namespace ofxasynctransfer {
 
 class Reader final {
  public:
-  explicit Reader(int frames = 2);
+  explicit Reader(int frames = 3);
+  void setup(int frames);
 
   // Disallow copy semantics
   Reader(const Reader&) = delete;
@@ -50,32 +48,56 @@ class Reader final {
   Reader(Reader&&) = default;
   Reader& operator=(Reader&&) = default;
 
-  // Modifiers
+  // Copies the contents of a target into pixels asynchronously with the cost
+  // of GPU memory and some amount of CPU. Use bind() if you just want to
+  // lookup the contents of the target. The format of the resulting pixels is
+  // automatically chosen from the internal format of the target when the image
+  // type is undefined or pixel format is unknown.
   template <class T>
-  Pixels<const T> bind(const ofFbo& fbo, ofImageType imageType);
+  void copyToPixels(const ofTexture& texture,
+                    ofPixels_<T>& pixels,
+                    ofImageType imageType = OF_IMAGE_UNDEFINED);
   template <class T>
-  Pixels<const T> bind(const ofTexture& texture, ofImageType imageType);
+  void copyToPixels(const ofFbo& fbo,
+                    ofPixels_<T>& pixels,
+                    ofImageType imageType = OF_IMAGE_UNDEFINED);
   template <class T>
-  Pixels<const T> bind(const ofFbo& fbo, ofPixelFormat pixelFormat);
+  void copyToPixels(const ofTexture& texture,
+                    ofPixels_<T>& pixels,
+                    ofPixelFormat pixelFormat);
   template <class T>
-  Pixels<const T> bind(const ofTexture& texture, ofPixelFormat pixelFormat);
+  void copyToPixels(const ofFbo& fbo,
+                    ofPixels_<T>& pixels,
+                    ofPixelFormat pixelFormat);
+
+  // Binds the contents of a target to CPU memory addresses via a pixel buffer
+  // for reading. The unbind() must be called after finishing with the data to
+  // release the buffer. The format of the resulting pixels is automatically
+  // chosen from the internal format of the target when the image type is
+  // undefined or pixel format is unknown.
   template <class T>
-  Pixels<const T> bind(const ofFbo& fbo, GLenum format);
+  Pixels_<const T> bind(const ofTexture& texture,
+                        ofImageType imageType = OF_IMAGE_UNDEFINED);
   template <class T>
-  Pixels<const T> bind(const ofTexture& texture, GLenum format);
+  Pixels_<const T> bind(const ofFbo& fbo,
+                        ofImageType imageType = OF_IMAGE_UNDEFINED);
+  template <class T>
+  Pixels_<const T> bind(const ofTexture& texture, ofPixelFormat pixelFormat);
+  template <class T>
+  Pixels_<const T> bind(const ofFbo& fbo, ofPixelFormat pixelFormat);
+  template <class T>
+  Pixels_<const T> bind(const ofTexture& texture, GLenum format);
+  template <class T>
+  Pixels_<const T> bind(const ofFbo& fbo, GLenum format);
+
+  // Unbinds the contents of the target bound by bind() from a pixel buffer.
+  // This must be called after finishing with pixel data to release the buffer.
   void unbind();
 
-  // Copies the contents of a target into pixels.
-  template <class T>
-  void copyTo(const ofFbo& fbo,
-              ofPixels_<T>& pixels,
-              ofPixelFormat pixelFormat);
-  template <class T>
-  void copyTo(const ofTexture& texture,
-              ofPixels_<T>& pixels,
-              ofPixelFormat pixelFormat);
-
-  // Controls the number of frames to use for asynchronous reading.
+  // Controls the number of frames to use for asynchronous reading. Setting
+  // this to 1 means synchronous transfer. An optimal size depends on use cases
+  // and the frequency of lookups, but the range between 1-3 should be enough
+  // with respect to latency and memory consumption.
   int getFrameSize() const;
   void setFrameSize(int value);
 
@@ -92,10 +114,25 @@ class Reader final {
   };
 
  private:
+  // Converts the pixel format into GL's format, or determine an appropriate
+  // format for a FBO or texture if the pixel format is unknown.
+  GLenum getFormat(const ofFbo& fbo, ofPixelFormat pixelFormat) const;
+  GLenum getFormat(const ofTexture& texture, ofPixelFormat pixelFormat) const;
+
+  // Allocates the pixels for the given pixel format or the one determined by
+  // the internal format of a FBO or texture if the pixel format is unknown.
+  template <class T>
+  bool allocatePixels(const ofFbo& fbo,
+                      ofPixels_<T>& pixels,
+                      ofPixelFormat pixelFormat) const;
+  template <class T>
+  bool allocatePixels(const ofTexture& texture,
+                      ofPixels_<T>& pixels,
+                      ofPixelFormat pixelFormat) const;
   template <class T>
   Frame<Data>& allocate(int width, int height, GLenum format);
   template <class T>
-  Pixels<const T> bind();
+  Pixels_<const T> bind();
 
  private:
   Frames<Data> frames;
@@ -103,27 +140,41 @@ class Reader final {
 };
 
 template <class T>
-inline Pixels<const T> Reader::bind(const ofFbo& fbo,
-                                    ofImageType imageType) {
+inline void Reader::copyToPixels(const ofFbo& fbo,
+                                 ofPixels_<T>& pixels,
+                                 ofImageType imageType) {
+  copyToPixels(fbo, pixels, getPixelFormatFromImageType(imageType));
+}
+
+template <class T>
+inline void Reader::copyToPixels(const ofTexture& texture,
+                                 ofPixels_<T>& pixels,
+                                 ofImageType imageType) {
+  copyToPixels(texture, pixels, getPixelFormatFromImageType(imageType));
+}
+
+template <class T>
+inline Pixels_<const T> Reader::bind(const ofFbo& fbo,
+                                     ofImageType imageType) {
   return bind<T>(fbo, getPixelFormatFromImageType(imageType));
 }
 
 template <class T>
-inline Pixels<const T> Reader::bind(const ofTexture& texture,
-                                    ofImageType imageType) {
+inline Pixels_<const T> Reader::bind(const ofTexture& texture,
+                                     ofImageType imageType) {
   return bind<T>(texture, getPixelFormatFromImageType(imageType));
 }
 
 template <class T>
-inline Pixels<const T> Reader::bind(const ofFbo& fbo,
-                                    ofPixelFormat pixelFormat) {
-  return bind<T>(fbo, ofGetGLFormatFromPixelFormat(pixelFormat));
+inline Pixels_<const T> Reader::bind(const ofFbo& fbo,
+                                     ofPixelFormat pixelFormat) {
+  return bind<T>(fbo, getFormat(fbo, pixelFormat));
 }
 
 template <class T>
-inline Pixels<const T> Reader::bind(const ofTexture& texture,
-                                    ofPixelFormat pixelFormat) {
-  return bind<T>(texture, ofGetGLFormatFromPixelFormat(pixelFormat));
+inline Pixels_<const T> Reader::bind(const ofTexture& texture,
+                                     ofPixelFormat pixelFormat) {
+  return bind<T>(texture, getFormat(texture, pixelFormat));
 }
 
 }  // namespace ofxasynctransfer

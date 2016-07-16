@@ -30,6 +30,9 @@
 
 namespace ofxasynctransfer {
 
+// A frame holds a pixel buffer and such data as dimensions and format
+// associated to the buffer.
+
 template <class Data>
 class Frame final {
  public:

@@ -64,6 +64,9 @@ struct GLType<float> {
   static constexpr const GLenum value = GL_FLOAT;
 };
 
+// A image type is just a number of channels with semantic meaning. Conversions
+// from image types to pixel formats are upcasting and do not loose information.
+// It's a matter of interpretation.
 ofPixelFormat getPixelFormatFromImageType(ofImageType imageType);
 
 }  // namespace ofxasynctransfer

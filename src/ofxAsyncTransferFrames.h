@@ -33,6 +33,8 @@
 
 namespace ofxasynctransfer {
 
+// A circular pixel buffer with pointers for the current and next operations.
+
 template <class Data>
 class Frames final {
  public:
