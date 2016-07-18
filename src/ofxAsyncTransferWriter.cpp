@@ -77,7 +77,7 @@ Pixels_<T> Writer::bind(ofTexture& texture, GLenum format) {
   // Read the buffer object into the texture.
   auto& current = frames.getCurrentFrame();
   if (current->isAllocated()) {
-    // Let texture allocate itself.
+    // Let the texture allocate itself.
     texture.loadData(current, current.getData().format, GLType<T>::value);
   }
 
@@ -96,7 +96,16 @@ Pixels_<T> Writer::bind(ofTexture& texture, GLenum format) {
   const auto channels = ofGetNumChannelsFromGLFormat(format);
   const auto bytes = width * height * channels * sizeof(T);
   next->bind(GL_PIXEL_UNPACK_BUFFER);
+
+  // Note that map() causes sync issue. If GPU is working with this buffer,
+  // map() will wait (stall) until GPU to finish its job. To avoid waiting
+  // (idle), you can call first glBufferData() with null pointer before
+  // map(). If you do that, the previous data in PBO will be discarded and
+  // map() returns a new allocated pointer immediately even if GPU is still
+  // working with the previous data.
+  // See: www.songho.ca/opengl/gl_pbo.html
   glBufferData(GL_PIXEL_UNPACK_BUFFER, bytes, nullptr, GL_STREAM_DRAW);
+
   const auto ptr = next->map<T>(GL_WRITE_ONLY);
   if (!ptr) {
     next->unbind(GL_PIXEL_UNPACK_BUFFER);

@@ -36,16 +36,16 @@
 namespace ofxasynctransfer {
 
 // A lightweight intermediate class representing a matrix of pixels. Converting
-// this into an ofPixels does not copy its contents, and it should finish
-// instantly. Because ofPixels does not accept const types in its template
-// argument, the converted type will be const if the template argument is a
-// const type in order to avoid the violation of constness.
+// this to an ofPixels does not copy its contents and finishes instantly.
 
 template <class T>
 class Pixels_ final {
  public:
-  using NonConstPixel = typename std::remove_const<T>::type;
-  using NonConstPixels = ofPixels_<NonConstPixel>;
+  using NonConstPixels = ofPixels_<typename std::remove_const<T>::type>;
+
+  // Because ofPixels does not accept const types in its template argument, the
+  // converted type will be const if the template argument is a const type in
+  // order to avoid the violation of constness.
   using Pixels = typename std::conditional<
     std::is_const<T>::value,
     typename std::add_const<NonConstPixels>::type,
@@ -109,10 +109,11 @@ inline T * Pixels_<T>::end() const {
 template <class T>
 typename Pixels_<T>::Pixels& Pixels_<T>::getPixels() const {
   if (!pixels.isAllocated()) {
-    pixels.setFromExternalPixels(const_cast<NonConstPixel *>(data),
-                                 width,
-                                 height,
-                                 ofGetNumChannelsFromGLFormat(format));
+    pixels.setFromExternalPixels(
+        const_cast<typename std::remove_const<T>::type *>(data),
+        width,
+        height,
+        ofGetNumChannelsFromGLFormat(format));
   }
   return pixels;
 }
@@ -120,4 +121,4 @@ typename Pixels_<T>::Pixels& Pixels_<T>::getPixels() const {
 }  // namespace ofxasynctransfer
 
 template <class T>
-using ofxAsyncTransferPixels = ofxasynctransfer::Pixels_<T>;
+using ofxAsyncTransferPixels_ = ofxasynctransfer::Pixels_<T>;
