@@ -72,12 +72,12 @@ GLenum Reader::getFormat(const ofTexture& texture,
   return ofGetGLFormatFromInternal(texture.getTextureData().glInternalFormat);
 }
 
-template <class T>
-bool Reader::allocatePixels(const ofFbo& fbo,
+template <class T, class U>
+bool Reader::allocatePixels(const Pixels_<U>& data,
                             ofPixels_<T>& pixels,
                             ofPixelFormat pixelFormat) const {
-  const auto width = fbo.getWidth();
-  const auto height = fbo.getHeight();
+  const auto width = data.getWidth();
+  const auto height = data.getHeight();
   if (!width || !height) {
     return false;
   }
@@ -85,36 +85,8 @@ bool Reader::allocatePixels(const ofFbo& fbo,
     pixels.allocate(width, height, pixelFormat);
     return pixels.isAllocated();
   }
-  if (!fbo.isAllocated()) {
-    return false;
-  }
-  const auto& texture = fbo.getTexture();
-  if (!texture.isAllocated()) {
-    return false;
-  }
-  pixels.allocate(width, height, ofGetImageTypeFromGLType(
-      texture.getTextureData().glInternalFormat));
-  return pixels.isAllocated();
-}
-
-template <class T>
-bool Reader::allocatePixels(const ofTexture& texture,
-                            ofPixels_<T>& pixels,
-                            ofPixelFormat pixelFormat) const {
-  const auto width = texture.getWidth();
-  const auto height = texture.getHeight();
-  if (!width || !height) {
-    return false;
-  }
-  if (pixelFormat != OF_PIXELS_UNKNOWN) {
-    pixels.allocate(width, height, pixelFormat);
-    return pixels.isAllocated();
-  }
-  if (!texture.isAllocated()) {
-    return false;
-  }
-  pixels.allocate(width, height, ofGetImageTypeFromGLType(
-      texture.getTextureData().glInternalFormat));
+  const auto channels = ofGetNumChannelsFromGLFormat(data.getFormat());
+  pixels.allocate(width, height, channels);
   return pixels.isAllocated();
 }
 
@@ -122,14 +94,14 @@ template <class T>
 void Reader::copyToPixels(const ofTexture& texture,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
-  if (!allocatePixels(texture, pixels, pixelFormat)) {
-    return;  // Failed to allocate pixels
-  }
   const auto format = getFormat(texture, pixelFormat);
   if (!format) {
     return;  // Could not determine the buffer format
   }
   const auto result = bind<T>(texture, format);
+  if (!allocatePixels(result, pixels, pixelFormat)) {
+    return;  // Failed to allocate pixels
+  }
   if (result) {
     const auto begin = std::begin(result);
     const auto end = std::end(result);
@@ -153,14 +125,14 @@ template <class T>
 void Reader::copyToPixels(const ofFbo& fbo,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
-  if (!allocatePixels(fbo, pixels, pixelFormat)) {
-    return;  // Failed to allocate pixels
-  }
   const auto format = getFormat(fbo, pixelFormat);
   if (!format) {
     return;  // Could not determine the buffer format
   }
   const auto result = bind<T>(fbo, format);
+  if (!allocatePixels(result, pixels, pixelFormat)) {
+    return;  // Failed to allocate pixels
+  }
   if (result) {
     const auto begin = std::begin(result);
     const auto end = std::end(result);

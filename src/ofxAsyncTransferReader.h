@@ -121,12 +121,8 @@ class Reader final {
 
   // Allocates the pixels for the given pixel format or the one determined by
   // the internal format of a FBO or texture if the pixel format is unknown.
-  template <class T>
-  bool allocatePixels(const ofFbo& fbo,
-                      ofPixels_<T>& pixels,
-                      ofPixelFormat pixelFormat) const;
-  template <class T>
-  bool allocatePixels(const ofTexture& texture,
+  template <class T, class U>
+  bool allocatePixels(const Pixels_<U>& data,
                       ofPixels_<T>& pixels,
                       ofPixelFormat pixelFormat) const;
   template <class T>
