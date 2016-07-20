@@ -37,7 +37,6 @@
 #include "ofConstants.h"
 #include "ofGLUtils.h"
 #include "ofPixels.h"
-#include "ofxAsyncTransferUtils.h"
 
 namespace ofxasynctransfer {
 
