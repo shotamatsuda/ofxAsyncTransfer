@@ -34,11 +34,19 @@
 namespace ofxasynctransfer {
 
 GLenum getGLType(const ofFbo& fbo) {
-  return ofGetGlTypeFromInternal(getGLInternalFormat(fbo));
+  const auto internalFormat = getGLInternalFormat(fbo);
+  if (!internalFormat) {
+    return GLenum();
+  }
+  return ofGetGlTypeFromInternal(internalFormat);
 }
 
 GLenum getGLType(const ofTexture& texture) {
-  return ofGetGlTypeFromInternal(getGLInternalFormat(texture));
+  const auto internalFormat = getGLInternalFormat(texture);
+  if (!internalFormat) {
+    return GLenum();
+  }
+  return ofGetGlTypeFromInternal(internalFormat);
 }
 
 GLenum getGLInternalFormat(const ofFbo& fbo) {
@@ -63,14 +71,22 @@ GLenum getGLFormat(const ofFbo& fbo, ofPixelFormat pixelFormat) {
   if (pixelFormat != OF_PIXELS_UNKNOWN) {
     return ofGetGLFormatFromPixelFormat(pixelFormat);
   }
-  return ofGetGLFormatFromInternal(getGLInternalFormat(fbo));
+  const auto internalFormat = getGLInternalFormat(fbo);
+  if (!internalFormat) {
+    return GLenum();
+  }
+  return ofGetGLFormatFromInternal(internalFormat);
 }
 
 GLenum getGLFormat(const ofTexture& texture, ofPixelFormat pixelFormat) {
   if (pixelFormat != OF_PIXELS_UNKNOWN) {
     return ofGetGLFormatFromPixelFormat(pixelFormat);
   }
-  return ofGetGLFormatFromInternal(getGLInternalFormat(texture));
+  const auto internalFormat = getGLInternalFormat(texture);
+  if (!internalFormat) {
+    return GLenum();
+  }
+  return ofGetGLFormatFromInternal(internalFormat);
 }
 
 ofPixelFormat getPixelFormatFromImageType(ofImageType imageType) {

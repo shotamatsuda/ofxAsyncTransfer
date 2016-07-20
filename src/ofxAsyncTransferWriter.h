@@ -105,7 +105,8 @@ inline Pixels_<void> Writer::bind(ofTexture& texture) {
   return bind(getGLType(texture), texture);
 }
 
-inline Pixels_<void> Writer::bind(ofTexture& texture, ofImageType imageType) {
+inline Pixels_<void> Writer::bind(ofTexture& texture,
+                                  ofImageType imageType) {
   return bind(getGLType(texture), texture, imageType);
 }
 
@@ -114,7 +115,8 @@ inline Pixels_<void> Writer::bind(ofTexture& texture,
   return bind(getGLType(texture), texture, pixelFormat);
 }
 
-inline Pixels_<void> Writer::bind(ofTexture& texture, GLenum format) {
+inline Pixels_<void> Writer::bind(ofTexture& texture,
+                                  GLenum format) {
   return bind(getGLType(texture), texture, format);
 }
 
