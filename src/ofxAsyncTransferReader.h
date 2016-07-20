@@ -39,6 +39,11 @@ namespace ofxasynctransfer {
 
 class Reader final {
  public:
+  using Pixels = Pixels_<const unsigned char>;
+  using ShortPixels = Pixels_<const unsigned short>;
+  using FloatPixels = Pixels_<const float>;
+
+ public:
   explicit Reader(int frames = 3);
   void setup(int frames);
 
@@ -75,6 +80,14 @@ class Reader final {
   bool copyToPixels(const ofFbo& fbo,
                     ofPixels_<T>& pixels,
                     ofPixelFormat pixelFormat);
+
+  // Shorthand functions
+  template <class... Args>
+  Pixels bindAsPixels(Args&&... args);
+  template <class... Args>
+  ShortPixels bindAsShortPixels(Args&&... args);
+  template <class... Args>
+  FloatPixels bindAsFloatPixels(Args&&... args);
 
   // Binds the contents of a target to CPU memory addresses via a pixel buffer
   // for reading. The unbind() must be called after finishing with the data to
@@ -172,6 +185,21 @@ inline bool Reader::copyToPixels(const ofTexture& texture,
                                  ofPixels_<T>& pixels,
                                  ofImageType imageType) {
   return copyToPixels(texture, pixels, getPixelFormatFromImageType(imageType));
+}
+
+template <class... Args>
+inline Reader::Pixels Reader::bindAsPixels(Args&&... args) {
+  return bind<unsigned char>(std::forward<Args>(args)...);
+}
+
+template <class... Args>
+inline Reader::ShortPixels Reader::bindAsShortPixels(Args&&... args) {
+  return bind<unsigned short>(std::forward<Args>(args)...);
+}
+
+template <class... Args>
+inline Reader::FloatPixels Reader::bindAsFloatPixels(Args&&... args) {
+  return bind<float>(std::forward<Args>(args)...);
 }
 
 inline Pixels_<const void> Reader::bind(const ofTexture& texture) {

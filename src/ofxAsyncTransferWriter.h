@@ -38,6 +38,11 @@ namespace ofxasynctransfer {
 
 class Writer final {
  public:
+  using Pixels = Pixels_<unsigned char>;
+  using ShortPixels = Pixels_<unsigned short>;
+  using FloatPixels = Pixels_<float>;
+
+ public:
   explicit Writer(int frames = 3);
   void setup(int frames);
 
@@ -48,6 +53,14 @@ class Writer final {
   // Move semantics
   Writer(Writer&&) = default;
   Writer& operator=(Writer&&) = default;
+
+  // Shorthand functions
+  template <class... Args>
+  Pixels bindAsPixels(Args&&... args);
+  template <class... Args>
+  ShortPixels bindAsShortPixels(Args&&... args);
+  template <class... Args>
+  FloatPixels bindAsFloatPixels(Args&&... args);
 
   // Binds the contents of a texture to CPU memory addresses via a pixel buffer
   // for writing. The unbind() must be called after finishing with the data to
@@ -100,6 +113,21 @@ class Writer final {
   Frames<Data> frames;
   bool bound;
 };
+
+template <class... Args>
+inline Writer::Pixels Writer::bindAsPixels(Args&&... args) {
+  return bind<unsigned char>(std::forward<Args>(args)...);
+}
+
+template <class... Args>
+inline Writer::ShortPixels Writer::bindAsShortPixels(Args&&... args) {
+  return bind<unsigned short>(std::forward<Args>(args)...);
+}
+
+template <class... Args>
+inline Writer::FloatPixels Writer::bindAsFloatPixels(Args&&... args) {
+  return bind<float>(std::forward<Args>(args)...);
+}
 
 inline Pixels_<void> Writer::bind(ofTexture& texture) {
   return bind(getGLType(texture), texture);
