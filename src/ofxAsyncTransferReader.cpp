@@ -65,65 +65,93 @@ bool Reader::allocatePixels(const Pixels_<U>& data,
 }
 
 template <class T>
-void Reader::copyToPixels(const ofTexture& texture,
+bool Reader::copyToPixels(const ofTexture& texture,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
   const auto format = getGLFormat(texture, pixelFormat);
   if (!format) {
-    return;  // Could not determine the buffer format
+    return false;  // Could not determine the buffer format
   }
   const auto result = bind<T>(texture, format);
+  if (!result) {
+    return false;
+  }
   if (!allocatePixels(result, pixels, pixelFormat)) {
-    return;  // Failed to allocate pixels
+    return false;  // Failed to allocate pixels
   }
-  if (result) {
-    const auto begin = std::begin(result);
-    const auto end = std::end(result);
-    assert(sizeof(T) * std::distance(begin, end) == pixels.getTotalBytes());
-    std::copy(begin, end, pixels.getData());
-    unbind();
-  }
+  const auto begin = std::begin(result);
+  const auto end = std::end(result);
+  assert(sizeof(T) * std::distance(begin, end) == pixels.getTotalBytes());
+  std::copy(begin, end, pixels.getData());
+  unbind();
+  return true;
 }
 
-template void Reader::copyToPixels(const ofTexture&,
-                                   ofPixels&,
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::uint8_t>&,
                                    ofPixelFormat);
-template void Reader::copyToPixels(const ofTexture&,
-                                   ofShortPixels&,
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::int8_t>&,
                                    ofPixelFormat);
-template void Reader::copyToPixels(const ofTexture&,
-                                   ofFloatPixels&,
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::uint16_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::int16_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::uint32_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<std::int32_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofTexture&,
+                                   ofPixels_<float>&,
                                    ofPixelFormat);
 
 template <class T>
-void Reader::copyToPixels(const ofFbo& fbo,
+bool Reader::copyToPixels(const ofFbo& fbo,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
   const auto format = getGLFormat(fbo, pixelFormat);
   if (!format) {
-    return;  // Could not determine the buffer format
+    return false;  // Could not determine the buffer format
   }
   const auto result = bind<T>(fbo, format);
+  if (!result) {
+    return false;
+  }
   if (!allocatePixels(result, pixels, pixelFormat)) {
-    return;  // Failed to allocate pixels
+    return false;  // Failed to allocate pixels
   }
-  if (result) {
-    const auto begin = std::begin(result);
-    const auto end = std::end(result);
-    assert(sizeof(T) * std::distance(begin, end) == pixels.getTotalBytes());
-    std::copy(begin, end, pixels.getData());
-    unbind();
-  }
+  const auto begin = std::begin(result);
+  const auto end = std::end(result);
+  assert(sizeof(T) * std::distance(begin, end) == pixels.getTotalBytes());
+  std::copy(begin, end, pixels.getData());
+  unbind();
+  return true;
 }
 
-template void Reader::copyToPixels(const ofFbo&,
-                                   ofPixels&,
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::uint8_t>&,
                                    ofPixelFormat);
-template void Reader::copyToPixels(const ofFbo&,
-                                   ofShortPixels&,
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::int8_t>&,
                                    ofPixelFormat);
-template void Reader::copyToPixels(const ofFbo&,
-                                   ofFloatPixels&,
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::uint16_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::int16_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::uint32_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<std::int32_t>&,
+                                   ofPixelFormat);
+template bool Reader::copyToPixels(const ofFbo&,
+                                   ofPixels_<float>&,
                                    ofPixelFormat);
 
 template <class T>

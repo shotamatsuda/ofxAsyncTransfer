@@ -56,19 +56,23 @@ class Reader final {
   // automatically chosen from the internal format of the target when the image
   // type is undefined or pixel format is unknown.
   template <class T>
-  void copyToPixels(const ofTexture& texture,
-                    ofPixels_<T>& pixels,
-                    ofImageType imageType = OF_IMAGE_UNDEFINED);
+  bool copyToPixels(const ofTexture& texture, ofPixels_<T>& pixels);
   template <class T>
-  void copyToPixels(const ofFbo& fbo,
-                    ofPixels_<T>& pixels,
-                    ofImageType imageType = OF_IMAGE_UNDEFINED);
+  bool copyToPixels(const ofFbo& fbo, ofPixels_<T>& pixels);
   template <class T>
-  void copyToPixels(const ofTexture& texture,
+  bool copyToPixels(const ofTexture& texture,
+                    ofPixels_<T>& pixels,
+                    ofImageType imageType);
+  template <class T>
+  bool copyToPixels(const ofFbo& fbo,
+                    ofPixels_<T>& pixels,
+                    ofImageType imageType);
+  template <class T>
+  bool copyToPixels(const ofTexture& texture,
                     ofPixels_<T>& pixels,
                     ofPixelFormat pixelFormat);
   template <class T>
-  void copyToPixels(const ofFbo& fbo,
+  bool copyToPixels(const ofFbo& fbo,
                     ofPixels_<T>& pixels,
                     ofPixelFormat pixelFormat);
 
@@ -145,17 +149,29 @@ class Reader final {
 };
 
 template <class T>
-inline void Reader::copyToPixels(const ofFbo& fbo,
-                                 ofPixels_<T>& pixels,
-                                 ofImageType imageType) {
-  copyToPixels(fbo, pixels, getPixelFormatFromImageType(imageType));
+inline bool Reader::copyToPixels(const ofFbo& fbo,
+                                 ofPixels_<T>& pixels) {
+  return copyToPixels(fbo, pixels, OF_PIXELS_UNKNOWN);
 }
 
 template <class T>
-inline void Reader::copyToPixels(const ofTexture& texture,
+inline bool Reader::copyToPixels(const ofTexture& texture,
+                                 ofPixels_<T>& pixels) {
+  return copyToPixels(texture, pixels, OF_PIXELS_UNKNOWN);
+}
+
+template <class T>
+inline bool Reader::copyToPixels(const ofFbo& fbo,
                                  ofPixels_<T>& pixels,
                                  ofImageType imageType) {
-  copyToPixels(texture, pixels, getPixelFormatFromImageType(imageType));
+  return copyToPixels(fbo, pixels, getPixelFormatFromImageType(imageType));
+}
+
+template <class T>
+inline bool Reader::copyToPixels(const ofTexture& texture,
+                                 ofPixels_<T>& pixels,
+                                 ofImageType imageType) {
+  return copyToPixels(texture, pixels, getPixelFormatFromImageType(imageType));
 }
 
 inline Pixels_<const void> Reader::bind(const ofTexture& texture) {
@@ -213,12 +229,12 @@ inline Pixels_<const void> Reader::bind(GLenum type, Args&&... args) {
 
 template <class T>
 inline Pixels_<const T> Reader::bind(const ofFbo& fbo) {
-  return bind<T>(fbo, OF_IMAGE_UNDEFINED);
+  return bind<T>(fbo, OF_PIXELS_UNKNOWN);
 }
 
 template <class T>
 inline Pixels_<const T> Reader::bind(const ofTexture& texture) {
-  return bind<T>(texture, OF_IMAGE_UNDEFINED);
+  return bind<T>(texture, OF_PIXELS_UNKNOWN);
 }
 
 template <class T>

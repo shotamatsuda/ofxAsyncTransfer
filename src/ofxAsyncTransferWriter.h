@@ -135,7 +135,7 @@ inline Pixels_<void> Writer::bind(GLenum type, Args&&... args) {
 
 template <class T>
 inline Pixels_<T> Writer::bind(ofTexture& texture) {
-  return bind<T>(texture, OF_IMAGE_UNDEFINED);
+  return bind<T>(texture, OF_PIXELS_UNKNOWN);
 }
 
 template <class T>
