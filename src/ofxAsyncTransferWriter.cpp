@@ -78,7 +78,7 @@ Pixels_<T> Writer::bind(ofTexture& texture, GLenum format) {
   auto& current = frames.getCurrentFrame();
   if (current->isAllocated()) {
     // Let the texture allocate itself.
-    texture.loadData(current, current.getData().format, GLType<T>::value);
+    texture.loadData(current, current.getData().format, getGLType<T>());
   }
 
   // Allocate a new buffer object for the first use.

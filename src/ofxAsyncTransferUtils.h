@@ -27,10 +27,15 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 #include "ofConstants.h"
+#include "ofFbo.h"
+#include "ofTexture.h"
 
 namespace ofxasynctransfer {
+
+namespace detail {
 
 template <class T>
 struct GLType {};
@@ -63,6 +68,23 @@ template <>
 struct GLType<float> {
   static constexpr const GLenum value = GL_FLOAT;
 };
+
+}  // namespace detail
+
+template <class T>
+inline GLenum getGLType() {
+  return detail::GLType<typename std::remove_cv<T>::type>::value;
+}
+
+GLenum getGLType(const ofFbo& fbo);
+GLenum getGLType(const ofTexture& texture);
+GLenum getGLInternalFormat(const ofFbo& fbo);
+GLenum getGLInternalFormat(const ofTexture& texture);
+
+// Converts the pixel format into GL's format, or determine an appropriate
+// format for a FBO or texture if the pixel format is unknown.
+GLenum getGLFormat(const ofFbo& fbo, ofPixelFormat pixelFormat);
+GLenum getGLFormat(const ofTexture& texture, ofPixelFormat pixelFormat);
 
 // A image type is just a number of channels with semantic meaning. Conversions
 // from image types to pixel formats are upcasting and do not loose information.

@@ -27,8 +27,51 @@
 #include "ofxAsyncTransferUtils.h"
 
 #include "ofConstants.h"
+#include "ofFbo.h"
+#include "ofGLUtils.h"
+#include "ofTexture.h"
 
 namespace ofxasynctransfer {
+
+GLenum getGLType(const ofFbo& fbo) {
+  return ofGetGlTypeFromInternal(getGLInternalFormat(fbo));
+}
+
+GLenum getGLType(const ofTexture& texture) {
+  return ofGetGlTypeFromInternal(getGLInternalFormat(texture));
+}
+
+GLenum getGLInternalFormat(const ofFbo& fbo) {
+  if (!fbo.isAllocated()) {
+    return GLenum();
+  }
+  const auto& texture = fbo.getTexture();
+  if (!texture.isAllocated()) {
+    return GLenum();
+  }
+  return texture.getTextureData().glInternalFormat;
+}
+
+GLenum getGLInternalFormat(const ofTexture& texture) {
+  if (!texture.isAllocated()) {
+    return GLenum();
+  }
+  return texture.getTextureData().glInternalFormat;
+}
+
+GLenum getGLFormat(const ofFbo& fbo, ofPixelFormat pixelFormat) {
+  if (pixelFormat != OF_PIXELS_UNKNOWN) {
+    return ofGetGLFormatFromPixelFormat(pixelFormat);
+  }
+  return ofGetGLFormatFromInternal(getGLInternalFormat(fbo));
+}
+
+GLenum getGLFormat(const ofTexture& texture, ofPixelFormat pixelFormat) {
+  if (pixelFormat != OF_PIXELS_UNKNOWN) {
+    return ofGetGLFormatFromPixelFormat(pixelFormat);
+  }
+  return ofGetGLFormatFromInternal(getGLInternalFormat(texture));
+}
 
 ofPixelFormat getPixelFormatFromImageType(ofImageType imageType) {
   switch (imageType) {

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "ofConstants.h"
 #include "ofFbo.h"
 #include "ofTexture.h"
@@ -75,12 +77,22 @@ class Reader final {
   // release the buffer. The format of the resulting pixels is automatically
   // chosen from the internal format of the target when the image type is
   // undefined or pixel format is unknown.
+  Pixels_<const void> bind(const ofTexture& texture);
+  Pixels_<const void> bind(const ofFbo& fbo);
+  Pixels_<const void> bind(const ofTexture& texture, ofImageType imageType);
+  Pixels_<const void> bind(const ofFbo& fbo, ofImageType imageType);
+  Pixels_<const void> bind(const ofTexture& texture, ofPixelFormat pixelFormat);
+  Pixels_<const void> bind(const ofFbo& fbo, ofPixelFormat pixelFormat);
+  Pixels_<const void> bind(const ofTexture& texture, GLenum format);
+  Pixels_<const void> bind(const ofFbo& fbo, GLenum format);
   template <class T>
-  Pixels_<const T> bind(const ofTexture& texture,
-                        ofImageType imageType = OF_IMAGE_UNDEFINED);
+  Pixels_<const T> bind(const ofTexture& texture);
   template <class T>
-  Pixels_<const T> bind(const ofFbo& fbo,
-                        ofImageType imageType = OF_IMAGE_UNDEFINED);
+  Pixels_<const T> bind(const ofFbo& fbo);
+  template <class T>
+  Pixels_<const T> bind(const ofTexture& texture, ofImageType imageType);
+  template <class T>
+  Pixels_<const T> bind(const ofFbo& fbo, ofImageType imageType);
   template <class T>
   Pixels_<const T> bind(const ofTexture& texture, ofPixelFormat pixelFormat);
   template <class T>
@@ -114,11 +126,6 @@ class Reader final {
   };
 
  private:
-  // Converts the pixel format into GL's format, or determine an appropriate
-  // format for a FBO or texture if the pixel format is unknown.
-  GLenum getFormat(const ofFbo& fbo, ofPixelFormat pixelFormat) const;
-  GLenum getFormat(const ofTexture& texture, ofPixelFormat pixelFormat) const;
-
   // Allocates the pixels for the given pixel format or the one determined by
   // the internal format of a FBO or texture if the pixel format is unknown.
   template <class T, class U>
@@ -127,6 +134,8 @@ class Reader final {
                       ofPixelFormat pixelFormat) const;
   template <class T>
   Frame<Data>& allocate(int width, int height, GLenum format);
+  template <class... Args>
+  Pixels_<const void> bind(GLenum type, Args&&... args);
   template <class T>
   Pixels_<const T> bind();
 
@@ -149,6 +158,69 @@ inline void Reader::copyToPixels(const ofTexture& texture,
   copyToPixels(texture, pixels, getPixelFormatFromImageType(imageType));
 }
 
+inline Pixels_<const void> Reader::bind(const ofTexture& texture) {
+  return bind(getGLType(texture), texture);
+}
+
+inline Pixels_<const void> Reader::bind(const ofFbo& fbo) {
+  return bind(getGLType(fbo), fbo);
+}
+
+inline Pixels_<const void> Reader::bind(const ofTexture& texture,
+                                        ofImageType imageType) {
+  return bind(getGLType(texture), texture, imageType);
+}
+
+inline Pixels_<const void> Reader::bind(const ofFbo& fbo,
+                                        ofImageType imageType) {
+  return bind(getGLType(fbo), fbo, imageType);
+}
+
+inline Pixels_<const void> Reader::bind(const ofTexture& texture,
+                                        ofPixelFormat pixelFormat) {
+  return bind(getGLType(texture), texture, pixelFormat);
+}
+
+inline Pixels_<const void> Reader::bind(const ofFbo& fbo,
+                                        ofPixelFormat pixelFormat) {
+  return bind(getGLType(fbo), fbo, pixelFormat);
+}
+
+inline Pixels_<const void> Reader::bind(const ofTexture& texture,
+                                        GLenum format) {
+  return bind(getGLType(texture), texture, format);
+}
+
+inline Pixels_<const void> Reader::bind(const ofFbo& fbo,
+                                        GLenum format) {
+  return bind(getGLType(fbo), fbo, format);
+}
+
+template <class... Args>
+inline Pixels_<const void> Reader::bind(GLenum type, Args&&... args) {
+  switch (type) {
+    case GL_UNSIGNED_BYTE:
+      return bind<unsigned char>(std::forward<Args>(args)...);
+    case GL_UNSIGNED_SHORT:
+      return bind<unsigned short>(std::forward<Args>(args)...);
+    case GL_FLOAT:
+      return bind<float>(std::forward<Args>(args)...);
+    default:
+      break;
+  }
+  return Pixels_<const void>();
+}
+
+template <class T>
+inline Pixels_<const T> Reader::bind(const ofFbo& fbo) {
+  return bind<T>(fbo, OF_IMAGE_UNDEFINED);
+}
+
+template <class T>
+inline Pixels_<const T> Reader::bind(const ofTexture& texture) {
+  return bind<T>(texture, OF_IMAGE_UNDEFINED);
+}
+
 template <class T>
 inline Pixels_<const T> Reader::bind(const ofFbo& fbo,
                                      ofImageType imageType) {
@@ -164,13 +236,13 @@ inline Pixels_<const T> Reader::bind(const ofTexture& texture,
 template <class T>
 inline Pixels_<const T> Reader::bind(const ofFbo& fbo,
                                      ofPixelFormat pixelFormat) {
-  return bind<T>(fbo, getFormat(fbo, pixelFormat));
+  return bind<T>(fbo, getGLFormat(fbo, pixelFormat));
 }
 
 template <class T>
 inline Pixels_<const T> Reader::bind(const ofTexture& texture,
                                      ofPixelFormat pixelFormat) {
-  return bind<T>(texture, getFormat(texture, pixelFormat));
+  return bind<T>(texture, getGLFormat(texture, pixelFormat));
 }
 
 }  // namespace ofxasynctransfer

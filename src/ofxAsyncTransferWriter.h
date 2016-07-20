@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "ofConstants.h"
 #include "ofTexture.h"
 #include "ofxAsyncTransferFrames.h"
@@ -52,9 +54,14 @@ class Writer final {
   // release the buffer. The format of the resulting pixels is automatically
   // chosen from the internal format of the target when the image type is
   // undefined or pixel format is unknown.
+  Pixels_<void> bind(ofTexture& texture);
+  Pixels_<void> bind(ofTexture& texture, ofImageType imageType);
+  Pixels_<void> bind(ofTexture& texture, ofPixelFormat pixelFormat);
+  Pixels_<void> bind(ofTexture& texture, GLenum format);
   template <class T>
-  Pixels_<T> bind(ofTexture& texture,
-                  ofImageType imageType = OF_IMAGE_UNDEFINED);
+  Pixels_<T> bind(ofTexture& texture);
+  template <class T>
+  Pixels_<T> bind(ofTexture& texture, ofImageType imageType);
   template <class T>
   Pixels_<T> bind(ofTexture& texture, ofPixelFormat pixelFormat);
   template <class T>
@@ -86,9 +93,50 @@ class Writer final {
   };
 
  private:
+  template <class... Args>
+  Pixels_<void> bind(GLenum type, Args&&... args);
+
+ private:
   Frames<Data> frames;
   bool bound;
 };
+
+inline Pixels_<void> Writer::bind(ofTexture& texture) {
+  return bind(getGLType(texture), texture);
+}
+
+inline Pixels_<void> Writer::bind(ofTexture& texture, ofImageType imageType) {
+  return bind(getGLType(texture), texture, imageType);
+}
+
+inline Pixels_<void> Writer::bind(ofTexture& texture,
+                                  ofPixelFormat pixelFormat) {
+  return bind(getGLType(texture), texture, pixelFormat);
+}
+
+inline Pixels_<void> Writer::bind(ofTexture& texture, GLenum format) {
+  return bind(getGLType(texture), texture, format);
+}
+
+template <class... Args>
+inline Pixels_<void> Writer::bind(GLenum type, Args&&... args) {
+  switch (type) {
+    case GL_UNSIGNED_BYTE:
+      return bind<unsigned char>(std::forward<Args>(args)...);
+    case GL_UNSIGNED_SHORT:
+      return bind<unsigned short>(std::forward<Args>(args)...);
+    case GL_FLOAT:
+      return bind<float>(std::forward<Args>(args)...);
+    default:
+      break;
+  }
+  return Pixels_<void>();
+}
+
+template <class T>
+inline Pixels_<T> Writer::bind(ofTexture& texture) {
+  return bind<T>(texture, OF_IMAGE_UNDEFINED);
+}
 
 template <class T>
 inline Pixels_<T> Writer::bind(ofTexture& texture, ofImageType imageType) {

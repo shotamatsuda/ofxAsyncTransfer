@@ -46,32 +46,6 @@ void Reader::setup(int frames) {
   this->frames.setSize(frames);
 }
 
-GLenum Reader::getFormat(const ofFbo& fbo,
-                         ofPixelFormat pixelFormat) const {
-  if (pixelFormat != OF_PIXELS_UNKNOWN) {
-    return ofGetGLFormatFromPixelFormat(pixelFormat);
-  }
-  if (!fbo.isAllocated()) {
-    return GLenum();
-  }
-  const auto& texture = fbo.getTexture();
-  if (!texture.isAllocated()) {
-    return GLenum();
-  }
-  return ofGetGLFormatFromInternal(texture.getTextureData().glInternalFormat);
-}
-
-GLenum Reader::getFormat(const ofTexture& texture,
-                         ofPixelFormat pixelFormat) const {
-  if (pixelFormat != OF_PIXELS_UNKNOWN) {
-    return ofGetGLFormatFromPixelFormat(pixelFormat);
-  }
-  if (!texture.isAllocated()) {
-    return GLenum();
-  }
-  return ofGetGLFormatFromInternal(texture.getTextureData().glInternalFormat);
-}
-
 template <class T, class U>
 bool Reader::allocatePixels(const Pixels_<U>& data,
                             ofPixels_<T>& pixels,
@@ -94,7 +68,7 @@ template <class T>
 void Reader::copyToPixels(const ofTexture& texture,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
-  const auto format = getFormat(texture, pixelFormat);
+  const auto format = getGLFormat(texture, pixelFormat);
   if (!format) {
     return;  // Could not determine the buffer format
   }
@@ -125,7 +99,7 @@ template <class T>
 void Reader::copyToPixels(const ofFbo& fbo,
                           ofPixels_<T>& pixels,
                           ofPixelFormat pixelFormat) {
-  const auto format = getFormat(fbo, pixelFormat);
+  const auto format = getGLFormat(fbo, pixelFormat);
   if (!format) {
     return;  // Could not determine the buffer format
   }
@@ -168,7 +142,7 @@ Pixels_<const T> Reader::bind(const ofTexture& texture, GLenum format) {
   ofSetPixelStoreiAlignment(GL_PACK_ALIGNMENT, width, sizeof(T), channels);
   current->bind(GL_PIXEL_PACK_BUFFER);
   texture.bind();
-  glGetTexImage(target, 0, format, GLType<T>::value, nullptr);
+  glGetTexImage(target, 0, format, getGLType<T>(), nullptr);
   texture.unbind();
   current->unbind(GL_PIXEL_PACK_BUFFER);
 
@@ -198,7 +172,7 @@ Pixels_<const T> Reader::bind(const ofFbo& fbo, GLenum format) {
   // Read the framebuffer into a buffer object for the current frame
   current->bind(GL_PIXEL_PACK_BUFFER);
   fbo.bind();
-  glReadPixels(0, 0, width, height, format, GLType<T>::value, nullptr);
+  glReadPixels(0, 0, width, height, format, getGLType<T>(), nullptr);
   fbo.unbind();
   current->unbind(GL_PIXEL_PACK_BUFFER);
 
