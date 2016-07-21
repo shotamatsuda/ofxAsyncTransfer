@@ -31,7 +31,7 @@ When the frame size of `reader` is more than 1, `copyToPixels()` asynchronously 
 ```cpp
 grabber.update();
 const auto bound = reader.bind<unsigned char>(grabber.getTexture());
-std::copy(std::begin(bound), std::end(bound), pixels.getData());
+std::copy(std::begin(bound), std::end(bound), pixels.getData());
 reader.unbind();
 ```
 
@@ -40,7 +40,7 @@ Or using a shorthand function:
 ```cpp
 grabber.update();
 const auto bound = reader.bindAsPixels(grabber.getTexture());
-std::copy(std::begin(bound), std::end(bound), pixels.getData());
+std::copy(std::begin(bound), std::end(bound), pixels.getData());
 reader.unbind();
 ```
 
