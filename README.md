@@ -107,7 +107,7 @@ so that the returned value remains alive.
 
 ### Shorthand Functions
 
-Not really shorthand with respect to the number of characters, but for those who are not familiar with template meta programming.
+Not really shorthands with respect to the number of characters, but for those who are not familiar with template meta programming, those will be easier to handle.
 
 Shorthand | Full
 --- | ---
