@@ -78,7 +78,15 @@ class Pixels_ final {
   T * begin() const;
   T * end() const;
 
-  // Pixels
+  // Ideally the return value should be an ofPixels constructed with the move
+  // constructor and then no storage is needed in member variables, but
+  // returning like that will make the pixels mutable or need a full copy of
+  // its data. Passing it as a Lvalue reference retains constness otherwise a
+  // copy is created.
+  // Note that it will lead to undefined behaviors to perform implicit
+  // conversion to ofPixels as a Lvalue reference while this object is a Rvalue
+  // reference, because this object will be deallocated just after the
+  // conversion finishes.
   Pixels& getPixels() const;
   operator Pixels&() const { return getPixels(); }
 
